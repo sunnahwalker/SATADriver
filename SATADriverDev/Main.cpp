@@ -2,7 +2,7 @@
 //
 //		App to check identify device and SMART data  
 //		Author: Ahsan Uddin
-//		© Sunnahwalker Productions
+//		Â© Sunnahwalker Productions
 //		Version: 1.1 Release: 1/17/2015
 //
 //////////////////////////////////////////////////////
@@ -96,6 +96,11 @@ int main() {
 #if defined DEBUG_PRINTS
 	printf("Status register of last SATA CMD: 0x%02x\n", ATA_Buffer->CurrentTaskFile[6]);
 #endif
+
+	if (ret == FALSE) {
+		printf("IOCTL returned FAIL, program will exit :(\n\n");
+		exit(EXIT_FAILURE);
+	}
 
 	CloseHandle(Sata_Drive);
 
