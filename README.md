@@ -1,7 +1,7 @@
 # SATADriver
 Basic SATA application to check SATA drive information
 
-Run the compiled exe file from CMD as admin and it will display the model number, serial number and the firmwre rev of the SATA drive that is located at the first port in the SATA HBA.  
+Run the compiled exe file from CMD as admin and it will display the SKU, serial number, firmwre rev and the current SATA Gen speed of the SATA drive that is located at the first port in the SATA HBA.  
 
 Screenshot of the app:
 

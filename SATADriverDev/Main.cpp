@@ -22,6 +22,9 @@
 //Local Defines
 #define VERSION 01
 #define MAX_DEVICE 32
+#define TIME_OUT 20		//20 seconds T/O
+
+//Local Pre Processors
 //#define DEBUG_PRINTS
 
 
@@ -79,7 +82,7 @@ int main() {
 	ATA_Buffer->Length = sizeof(ATA_PASS_THROUGH_EX);
 	ATA_Buffer->DataBufferOffset = sizeof(ATA_PASS_THROUGH_EX);
 	ATA_Buffer->DataTransferLength = sizeof(IDENTIFY_DEVICE_DATA);
-	ATA_Buffer->TimeOutValue = 10;
+	ATA_Buffer->TimeOutValue = TIME_OUT;
 	ATA_Buffer->CurrentTaskFile[6] = ID_CMD;
 
 	BOOL ret = DeviceIoControl(	Sata_Drive,
@@ -90,13 +93,17 @@ int main() {
 								NULL
 								);
 
+#if defined DEBUG_PRINTS
+	printf("Status register of last SATA CMD: 0x%02x\n", ATA_Buffer->CurrentTaskFile[6]);
+#endif
+
 	CloseHandle(Sata_Drive);
 
 	IDENTIFY_DEVICE_DATA *IDFY_Buffer;
 
 	IDFY_Buffer = (IDENTIFY_DEVICE_DATA *)(int(Buffer) + sizeof(ATA_PASS_THROUGH_EX));
 
-	printf("Model Number is: ");
+	printf("SKU is: ");
 	sorted_print((IDFY_Buffer->ModelNumber), 40);
 	printf("\n");
 
@@ -107,8 +114,10 @@ int main() {
 	printf("FW Rev is: ");
 	sorted_print((IDFY_Buffer->FirmwareRevision), 8);
 	printf("\n");
-	
+
+	printf("Current SATA Gen is: %d\n", IDFY_Buffer->SerialAtaCapabilities.CurrentSpeed);
+		
 	printf("\n");
-	
+
 	return 0;
 }
