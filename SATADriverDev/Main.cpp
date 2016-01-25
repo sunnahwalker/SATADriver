@@ -19,13 +19,13 @@
 #include <ntddscsi.h>
 #include <Ata.h>
 
+//Local Pre Processors
+//#define DEBUG_PRINTS_1
+
 //Local Defines
 #define VERSION 01
-#define MAX_DEVICE 32
 #define TIME_OUT 20		//20 seconds T/O
 
-//Local Pre Processors
-//#define DEBUG_PRINTS
 
 
 int main() {
@@ -33,68 +33,36 @@ int main() {
 	printf("Welcome to Ahsan's SATA drive info program, v%02d\n", VERSION);
 	printf("Code compiled on: %s %s\n\n", __DATE__, __TIME__);
 
-	TCHAR port[64];
-	LPTSTR line = L"\\\\.\\PhysicalDrive";
-	LPCTSTR format = L"%s%d";
+	
+	extern HANDLE Sata_Drive;
 
-	HANDLE Sata_Drive;
-
-	for (int i = 0; i < MAX_DEVICE; i++) {
-		wsprintf(port, format, line, i);
-
-		Sata_Drive = CreateFile(port,
-			GENERIC_READ | GENERIC_WRITE,
-			FILE_SHARE_READ | FILE_SHARE_WRITE,
-			NULL,
-			OPEN_EXISTING,
-			FILE_ATTRIBUTE_NORMAL,
-			NULL
-			);
-
-		if (Sata_Drive == INVALID_HANDLE_VALUE) {
-			if (GetLastError() == ERROR_ACCESS_DENIED) {
-				printf("Access is denied. Please run in Admin mode!!!...\n\n");;
-			}
-#if defined DEBUG_PRINTS
-			else {
-				printf("Failed to get handle! Port: %d Error: %d\n", i, GetLastError());
-			}
-#endif
-		}
-		else {
-			printf("SATA drive found in port: %d\n", i);
-			break;
-		}
-
-	}
-
-	if (Sata_Drive == INVALID_HANDLE_VALUE) {
+	if (find_port() == FALSE) {
 		printf("No valid drives found, program will exit :(\n\n");
 		exit(EXIT_FAILURE);
 	}
 
-	void *Buffer = malloc(sizeof(ATA_PASS_THROUGH_EX) + sizeof(IDENTIFY_DEVICE_DATA));
-	memset(Buffer, 0, sizeof(ATA_PASS_THROUGH_EX) + sizeof(IDENTIFY_DEVICE_DATA));
+	void *pBuffer = malloc(sizeof(ATA_PASS_THROUGH_EX) + sizeof(IDENTIFY_DEVICE_DATA));
+	memset(pBuffer, 0, sizeof(ATA_PASS_THROUGH_EX) + sizeof(IDENTIFY_DEVICE_DATA));
 
-	ATA_PASS_THROUGH_EX *ATA_Buffer =  (ATA_PASS_THROUGH_EX *) Buffer;
+	ATA_PASS_THROUGH_EX *pATA_Buffer =  (ATA_PASS_THROUGH_EX *) pBuffer;
 
-	ATA_Buffer->AtaFlags = ATA_FLAGS_DATA_IN | ATA_FLAGS_DRDY_REQUIRED;
-	ATA_Buffer->Length = sizeof(ATA_PASS_THROUGH_EX);
-	ATA_Buffer->DataBufferOffset = sizeof(ATA_PASS_THROUGH_EX);
-	ATA_Buffer->DataTransferLength = sizeof(IDENTIFY_DEVICE_DATA);
-	ATA_Buffer->TimeOutValue = TIME_OUT;
-	ATA_Buffer->CurrentTaskFile[6] = ID_CMD;
+	pATA_Buffer->AtaFlags = ATA_FLAGS_DATA_IN | ATA_FLAGS_DRDY_REQUIRED;
+	pATA_Buffer->Length = sizeof(ATA_PASS_THROUGH_EX);
+	pATA_Buffer->DataBufferOffset = sizeof(ATA_PASS_THROUGH_EX);
+	pATA_Buffer->DataTransferLength = sizeof(IDENTIFY_DEVICE_DATA);
+	pATA_Buffer->TimeOutValue = TIME_OUT;
+	pATA_Buffer->CurrentTaskFile[6] = ID_CMD;
 
 	BOOL ret = DeviceIoControl(	Sata_Drive,
 								IOCTL_ATA_PASS_THROUGH,
-								Buffer, (sizeof(ATA_PASS_THROUGH_EX) + sizeof(IDENTIFY_DEVICE_DATA)),
-								Buffer, (sizeof(ATA_PASS_THROUGH_EX) + sizeof(IDENTIFY_DEVICE_DATA)),
+								pBuffer, (sizeof(ATA_PASS_THROUGH_EX) + sizeof(IDENTIFY_DEVICE_DATA)),
+								pBuffer, (sizeof(ATA_PASS_THROUGH_EX) + sizeof(IDENTIFY_DEVICE_DATA)),
 								NULL,
 								NULL
 								);
 
-#if defined DEBUG_PRINTS
-	printf("Status register of last SATA CMD: 0x%02x\n", ATA_Buffer->CurrentTaskFile[6]);
+#if defined DEBUG_PRINTS_1
+	printf("Status register of last SATA CMD: 0x%02x\n", pATA_Buffer->CurrentTaskFile[6]);
 #endif
 
 	if (ret == FALSE) {
@@ -104,23 +72,23 @@ int main() {
 
 	CloseHandle(Sata_Drive);
 
-	IDENTIFY_DEVICE_DATA *IDFY_Buffer;
+	IDENTIFY_DEVICE_DATA *pIDFY_Buffer;
 
-	IDFY_Buffer = (IDENTIFY_DEVICE_DATA *)(int(Buffer) + sizeof(ATA_PASS_THROUGH_EX));
+	pIDFY_Buffer = (IDENTIFY_DEVICE_DATA *)(int(pBuffer) + sizeof(ATA_PASS_THROUGH_EX));
 
 	printf("SKU is: ");
-	sorted_print((IDFY_Buffer->ModelNumber), 40);
+	sorted_print((pIDFY_Buffer->ModelNumber), 40);
 	printf("\n");
 
 	printf("Serial Number is: ");
-	sorted_print((IDFY_Buffer->SerialNumber), 20);
+	sorted_print((pIDFY_Buffer->SerialNumber), 20);
 	printf("\n");
 
 	printf("FW Rev is: ");
-	sorted_print((IDFY_Buffer->FirmwareRevision), 8);
+	sorted_print((pIDFY_Buffer->FirmwareRevision), 8);
 	printf("\n");
 
-	printf("Current SATA Gen is: %d\n", IDFY_Buffer->SerialAtaCapabilities.CurrentSpeed);
+	printf("Current SATA Gen is: %d\n", pIDFY_Buffer->SerialAtaCapabilities.CurrentSpeed);
 		
 	printf("\n");
 
