@@ -7,8 +7,6 @@ Screenshot of the app:
 
 ![Alt text](/SATA_App.PNG "SATA Application")
 
-2/6/2015: Integrated the SMART read prints
-
-Future release would include SMART threshold exceed warnings.
+Future release would include SMART data parsing and display along with SMART threshold exceed warnings.
 
 Please let me know if you come across any bugs or if you have any questions or comemnts. You can reach me at ahsan@ahsanu.com
